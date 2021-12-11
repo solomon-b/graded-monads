@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DerivingVia #-}
@@ -28,3 +29,11 @@ instance Monad m => GradedMonad (ExceptT' m) Void Either where
       Left y -> pure $ Left $ Right y
       Right a -> pure $ Right a
 
+instance Monad m => MonadError e (ExceptT' m e) where
+  throwError :: e -> ExceptT' m e a
+  throwError e = ExceptT' $ pure $ Left e
+
+  catchError :: ExceptT' m e a -> (e -> ExceptT' m e a) -> ExceptT' m e a
+  catchError (ExceptT' m) f = ExceptT' $ m >>= \case
+    Left e -> runExceptT' $ f e
+    Right a -> pure $ Right a
