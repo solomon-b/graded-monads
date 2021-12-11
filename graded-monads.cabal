@@ -1,0 +1,46 @@
+cabal-version:      2.4
+name:               graded-monads
+version:            0.1.0.0
+description:        
+bug-reports:        https://github.com/solomon-b/aggregate-errors
+author:             solomon
+maintainer:         ssbothwell@gmail.com
+extra-source-files: CHANGELOG.md
+
+common common-settings
+  default-language:    Haskell2010
+  ghc-options:
+    -Wall
+    -Wcpp-undef
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Werror=missing-home-modules
+
+common common-libraries
+  build-depends:
+    , base ^>=4.15.0.0
+    , mtl
+
+executable aggregate-errors-example
+  -- A clever trick for aggregating different error types in a single do block.
+  import:
+    , common-libraries
+    , common-settings
+  main-is:
+    Main.hs
+  hs-source-dirs:
+    examples/aggregate-errors
+  build-depends:
+    , graded-monads
+
+library
+  import:
+    , common-libraries
+    , common-settings
+  hs-source-dirs:
+    src
+  exposed-modules:
+    Control.Monad.Graded
+    Control.Monad.Graded.ExceptT

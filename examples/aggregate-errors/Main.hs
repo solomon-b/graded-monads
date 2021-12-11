@@ -3,8 +3,8 @@
 {-# LANGUAGE InstanceSigs #-}
 module Main where
 
-import Data.Void
-import qualified Aggregate
+import qualified Control.Monad.Graded as Graded
+import Control.Monad.Graded.ExceptT
 
 data HttpError = HttpError deriving Show
 data ParseError = ParseError deriving Show
@@ -22,23 +22,12 @@ transformRequest _ = pure $ Right Request
 invokeRequest :: Monad m => Request -> m (Either HttpError Response)
 invokeRequest _ = pure $ Right Response
 
-instance Aggregate.Monad IO where
-  return :: a -> IO (Either Void a)
-  return a = pure $ Right a
-
-  (>>=) :: IO (Either e1 a) -> (a -> IO (Either e2 b)) -> IO (Either (Either e1 e2) b)
-  (>>=) m f = m >>= \case
-    Left e1 -> pure $ Left $ Left e1
-    Right a -> f a >>= \case
-      Left e2 -> pure $ Left $ Right e2
-      Right b -> pure $ Right b
-
 main :: IO ()
 main = do
-  result <- Aggregate.do
-    req <- mkRequest "hoogle.hackage.com"
-    req' <- transformRequest req
-    invokeRequest req'
+  result <- runExceptT' $ Graded.do
+    req <- ExceptT' $ mkRequest "hoogle.hackage.com"
+    req' <- ExceptT' $ transformRequest req
+    ExceptT' $ invokeRequest req'
   case result of
     Left (Left ParseError) -> print ParseError
     Left (Right (Left TransformError)) -> print TransformError
