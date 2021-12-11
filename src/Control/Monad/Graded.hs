@@ -38,3 +38,10 @@ instance GradedMonad Either Void Either where
       Left x -> Left (Left x)
       Right (Left y) -> Left (Right y)
       Right (Right a) -> Right a
+
+instance GradedMonad (,) () (,) where
+  greturn :: Identity ~> (,) ()
+  greturn (Identity x) = ((), x)
+
+  gjoin :: Compose ((,) x) ((,) y) z -> ((x, y), z)
+  gjoin (Compose (x, (y, z))) = ((x, y), z)
