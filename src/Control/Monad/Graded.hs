@@ -6,9 +6,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Control.Monad.Graded where
 
-import Data.Functor.Identity
 import Data.Functor.Compose
+import Data.Functor.Const
+import Data.Functor.Identity
+import Data.These
 import Data.Void
+
+import Control.Monad.Writer.Strict
 
 type (~>) f g = forall x. f x -> g x
 
@@ -45,3 +49,28 @@ instance GradedMonad (,) () (,) where
 
   gjoin :: Compose ((,) x) ((,) y) z -> ((x, y), z)
   gjoin (Compose (x, (y, z))) = ((x, y), z)
+
+--instance GradedMonad Either Void These where
+--  greturn :: Identity ~> Either Void
+--  greturn (Identity x) = Right x
+--
+--  gjoin :: Compose (Either x) (Either y) z -> Either (These x y) z
+--  gjoin (Compose m) = case m of
+--    Left x -> Left (This x)
+--    Right (Left y) -> Left (That y)
+--    Right (Right z) -> Right z
+
+instance GradedMonad These Void These where
+  greturn :: Identity ~> These Void
+  greturn (Identity x) = That x
+
+  gjoin :: Compose (These x) (These y) z -> These (These x y) z
+  gjoin (Compose m) =
+    case m of
+      This x -> This (This x)
+      That (This y) -> This (That y)
+      That (That z) -> That z
+      That (These _ z) -> That z
+      These x (This y) -> This (These x y)
+      These _ (That z) -> That z
+      These _ (These _ z) -> That z

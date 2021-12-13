@@ -3,7 +3,7 @@
 module Main where
 
 import qualified Control.Monad.Graded as Graded
-import Control.Monad.Graded.ExceptT
+import Control.Monad.Graded.Except
 
 import Control.Monad.Except
 

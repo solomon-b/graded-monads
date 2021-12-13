@@ -1,19 +1,18 @@
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-
-module Control.Monad.Graded.ExceptT where
+{-# LANGUAGE TypeOperators #-}
+module Control.Monad.Graded.Except where
 
 import Data.Void
 import Data.Functor.Identity
 import Data.Functor.Compose
-import Control.Monad.Graded hiding ((>>=), return)
 import Control.Monad.Except
+import Control.Monad.Graded hiding ((>>=), return)
+import Control.Monad.Graded.Except.Class
 
 newtype ExceptT' m e a = ExceptT' { runExceptT' :: m (Either e a) }
   deriving (Functor, Applicative, Monad) via  (ExceptT e m)
@@ -35,5 +34,14 @@ instance Monad m => MonadError e (ExceptT' m e) where
 
   catchError :: ExceptT' m e a -> (e -> ExceptT' m e a) -> ExceptT' m e a
   catchError (ExceptT' m) f = ExceptT' $ m >>= \case
+    Left e -> runExceptT' $ f e
+    Right a -> pure $ Right a
+
+instance Monad m => GradedMonadError (ExceptT' m) where
+  gthrowError :: e -> ExceptT' m e a
+  gthrowError e = ExceptT' $ pure $ Left e
+
+  gcatchError :: ExceptT' m e a -> (e -> ExceptT' m e a) -> ExceptT' m e a
+  gcatchError (ExceptT' m) f = ExceptT' $ m >>= \case
     Left e -> runExceptT' $ f e
     Right a -> pure $ Right a

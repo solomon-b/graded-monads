@@ -22,6 +22,7 @@ common common-libraries
   build-depends:
     , base ^>=4.15.0.0
     , mtl
+    , these
 
 executable aggregate-errors-example
   -- A clever trick for aggregating different error types in a single do block.
@@ -43,4 +44,7 @@ library
     src
   exposed-modules:
     Control.Monad.Graded
-    Control.Monad.Graded.ExceptT
+    Control.Monad.Graded.Except
+    Control.Monad.Graded.Except.Class
+    Control.Monad.Graded.Writer
+    Control.Monad.Graded.Writer.Class
