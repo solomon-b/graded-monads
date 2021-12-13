@@ -7,12 +7,9 @@
 module Control.Monad.Graded where
 
 import Data.Functor.Compose
-import Data.Functor.Const
 import Data.Functor.Identity
 import Data.These
 import Data.Void
-
-import Control.Monad.Writer.Strict
 
 type (~>) f g = forall x. f x -> g x
 
