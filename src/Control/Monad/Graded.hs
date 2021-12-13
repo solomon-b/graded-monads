@@ -29,6 +29,9 @@ return = greturn . Identity
 (>>=) :: GradedMonad m i t => m x a -> (a -> m y b) -> m (t x y) b
 (>>=) = gbind
 
+(>>) :: GradedMonad m i t => m x a -> m y b -> m (t x y) b
+(>>) ma mb = gbind ma (const mb)
+
 instance GradedMonad Either Void Either where
   greturn :: Identity ~> Either Void
   greturn (Identity x) = Right x

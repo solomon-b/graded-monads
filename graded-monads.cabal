@@ -24,7 +24,7 @@ common common-libraries
     , mtl
     , these
 
-executable aggregate-errors-example
+executable aggregated-errors
   -- A clever trick for aggregating different error types in a single do block.
   import:
     , common-libraries
@@ -32,7 +32,19 @@ executable aggregate-errors-example
   main-is:
     Main.hs
   hs-source-dirs:
-    examples/aggregate-errors
+    examples/aggregated-errors
+  build-depends:
+    , graded-monads
+
+executable aggregated-logs
+  -- A clever trick for aggregating different error types in a single do block.
+  import:
+    , common-libraries
+    , common-settings
+  main-is:
+    Main.hs
+  hs-source-dirs:
+    examples/aggregated-logs
   build-depends:
     , graded-monads
 

@@ -12,7 +12,7 @@ import Control.Monad.Graded hiding ((>>=), return)
 import Control.Monad.Graded.Writer.Class
 import Control.Monad.Writer
 
-newtype WriterT' m w a = WriterT' (m (a, w))
+newtype WriterT' m w a = WriterT' { runWriterT' :: (m (a, w)) }
   deriving (Functor, Applicative, Monad) via  (WriterT w m)
 
 instance Monad m => GradedMonad (WriterT' m) () (,) where
