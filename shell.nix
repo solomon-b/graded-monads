@@ -15,7 +15,8 @@ let
     pkgs.hlint
     pkgs.cabal-install
     pkgs.cabal2nix
-    pkgs.haskell.packages.ghc901.haskell-language-server
+    pkgs.ghcid
+    #pkgs.haskell.packages.ghc901.haskell-language-server
     #easy-hls
   ];
 
