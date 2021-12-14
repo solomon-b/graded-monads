@@ -12,6 +12,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeApplications #-}
 module Control.Monad.Graded where
 
@@ -25,11 +26,30 @@ type (~>) f g = forall x. f x -> g x
 type FunctorF :: (k -> Type -> Type) -> Constraint
 type FunctorF m = (forall x. Functor (m x))
 
-type Many :: (Type -> Type -> Type) -> Type -> [Type] -> Type
+type Many
+  :: (Type -> Type -> Type)
+  -> Type
+  -> [Type]
+  -> Type
 data Many t i vs
   where
   ANil :: i -> Many t i '[]
   ACons :: t v (Many t i vs) -> Many t i (v ': vs)
+
+instance Show i => Show (Many t i '[])
+  where
+  show = \case
+    ANil i -> show i
+
+instance
+  ( forall a b. (Show a, Show b) => Show (t a b)
+  , Show x
+  , Show (Many t i xs)
+  ) =>
+  Show (Many t i (x ': xs))
+  where
+  show = \case
+    ACons xxs -> show xxs
 
 type (++) :: [k] -> [k] -> [k]
 type family xs ++ ys

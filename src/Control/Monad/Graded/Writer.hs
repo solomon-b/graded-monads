@@ -28,8 +28,8 @@ instance Monad m => GradedMonad (WriterT' m) () (,)
     => Compose (WriterT' m xs) (WriterT' m ys)
     ~> WriterT' m (xs ++ ys)
   gjoin (Compose (WriterT' mma)) = WriterT' $ do
-    (WriterT' ma, logs :: _) <- mma
-    (a, logs' :: _) <- ma
+    (WriterT' ma, logs) <- mma
+    (a, logs') <- ma
     pure $ (a, appendMany (logs, logs'))
 
 instance Monad m => GradedMonadWriter (WriterT' m)
