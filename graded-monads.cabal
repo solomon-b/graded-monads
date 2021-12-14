@@ -23,6 +23,7 @@ common common-libraries
     , base ^>=4.15.0.0
     , mtl
     , these
+    , monoidal-functors
 
 executable aggregated-errors
   -- A clever trick for aggregating different error types in a single do block.
