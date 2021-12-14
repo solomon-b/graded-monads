@@ -1,5 +1,10 @@
 packages: ../graded-monads
 
+source-repository-package
+  type: git
+  location: https://github.com/solomon-b/monoidal-functors.git
+  tag: 27e59348bdba5d2c55e7f384cb10325ad438e64c
+
 -- Ensure that this project file is only used with GHC 9.0.1
 with-compiler: ghc-9.0.1
 
