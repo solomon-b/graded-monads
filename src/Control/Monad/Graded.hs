@@ -4,73 +4,107 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeApplications #-}
 module Control.Monad.Graded where
 
 import Data.Functor.Compose
 import Data.Functor.Identity
-import Data.These
-import Data.Void
+import Data.Kind
+import Control.Category.Tensor
 
 type (~>) f g = forall x. f x -> g x
 
-class (forall x. Functor (m x)) => GradedMonad m i t | m -> i t where
-  {-# MINIMAL greturn, (gjoin | gbind) #-}
-  greturn :: Identity ~> m i 
+type FunctorF :: (k -> Type -> Type) -> Constraint
+type FunctorF m = (forall x. Functor (m x))
 
-  gjoin :: Compose (m x) (m y) ~> m (t x y)
+type Many
+  :: (Type -> Type -> Type)
+  -> Type
+  -> [Type]
+  -> Type
+data Many t i vs
+  where
+  ANil :: i -> Many t i '[]
+  ACons :: t v (Many t i vs) -> Many t i (v ': vs)
+
+instance Show i => Show (Many t i '[])
+  where
+  show = \case
+    ANil i -> show i
+
+instance
+  ( forall a b. (Show a, Show b) => Show (t a b)
+  , Show x
+  , Show (Many t i xs)
+  ) =>
+  Show (Many t i (x ': xs))
+  where
+  show = \case
+    ACons xxs -> show xxs
+
+type (++) :: [k] -> [k] -> [k]
+type family xs ++ ys
+  where
+  '[] ++ xs = xs
+  (x ': xs) ++ ys = x ': (xs ++ ys)
+
+class AppendMany xs
+  where
+  appendMany
+    :: Tensor t i (->)
+    => Many t i xs `t` Many t i ys
+    -> Many t i (xs ++ ys)
+
+instance AppendMany '[]
+  where
+  appendMany = fwd lunit . glmap (\case { ANil i -> i })
+
+instance AppendMany xs => AppendMany (x ': xs)
+  where
+  appendMany = ACons . grmap appendMany . bwd assoc . glmap (\case { ACons i -> i })
+
+type GradedMonad
+  :: ([Type] -> Type -> Type)
+  -> Type
+  -> (Type -> Type -> Type)
+  -> Constraint
+class FunctorF m => GradedMonad m i t | m -> i t where
+  {-# MINIMAL greturn, (gjoin | gbind) #-}
+  greturn :: Identity ~> m '[]
+
+  gjoin :: AppendMany xs => (m xs `Compose` m ys) ~> m (xs ++ ys)
   gjoin (Compose m) = m `gbind` id
 
-  gbind :: m x a -> (a -> m y b) -> m (t x y) b 
+  gbind :: AppendMany xs => m xs a -> (a -> m ys b) -> m (xs ++ ys) b
   gbind mxa f = gjoin $ Compose $ fmap f mxa
 
-return :: GradedMonad m i t => x -> m i x
+return
+  :: GradedMonad m i t
+  => x
+  -> m '[] x
 return = greturn . Identity
 
-(>>=) :: GradedMonad m i t => m x a -> (a -> m y b) -> m (t x y) b
+(>>=)
+  :: GradedMonad m i t
+  => AppendMany xs
+  => m xs a
+  -> (a -> m ys b)
+  -> m (xs ++ ys) b
 (>>=) = gbind
 
-(>>) :: GradedMonad m i t => m x a -> m y b -> m (t x y) b
+(>>)
+  :: GradedMonad m i t
+  => AppendMany xs
+  => m xs a
+  -> m ys b
+  -> m (xs ++ ys) b
 (>>) ma mb = gbind ma (const mb)
-
-instance GradedMonad Either Void Either where
-  greturn :: Identity ~> Either Void
-  greturn (Identity x) = Right x
-
-  gjoin :: Compose (Either x) (Either y) ~> Either (Either x y)
-  gjoin (Compose f) =
-    case f of
-      Left x -> Left (Left x)
-      Right (Left y) -> Left (Right y)
-      Right (Right a) -> Right a
-
-instance GradedMonad (,) () (,) where
-  greturn :: Identity ~> (,) ()
-  greturn (Identity x) = ((), x)
-
-  gjoin :: Compose ((,) x) ((,) y) z -> ((x, y), z)
-  gjoin (Compose (x, (y, z))) = ((x, y), z)
-
---instance GradedMonad Either Void These where
---  greturn :: Identity ~> Either Void
---  greturn (Identity x) = Right x
---
---  gjoin :: Compose (Either x) (Either y) z -> Either (These x y) z
---  gjoin (Compose m) = case m of
---    Left x -> Left (This x)
---    Right (Left y) -> Left (That y)
---    Right (Right z) -> Right z
-
-instance GradedMonad These Void These where
-  greturn :: Identity ~> These Void
-  greturn (Identity x) = That x
-
-  gjoin :: Compose (These x) (These y) z -> These (These x y) z
-  gjoin (Compose m) =
-    case m of
-      This x -> This (This x)
-      That (This y) -> This (That y)
-      That (That z) -> That z
-      That (These _ z) -> That z
-      These x (This y) -> This (These x y)
-      These _ (That z) -> That z
-      These _ (These _ z) -> That z
