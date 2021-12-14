@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Control.Monad.Graded where
 
 import Data.Functor.Compose
@@ -36,20 +37,36 @@ data Many t i vs
   ANil :: i -> Many t i '[]
   ACons :: t v (Many t i vs) -> Many t i (v ': vs)
 
-instance Show i => Show (Many t i '[])
+instance (AsNested t i xs r, Show r) => Show (Many t i xs)
   where
-  show = \case
-    ANil i -> show i
+  show = show . fwd asNested
 
-instance
-  ( forall a b. (Show a, Show b) => Show (t a b)
-  , Show x
-  , Show (Many t i xs)
-  ) =>
-  Show (Many t i (x ': xs))
+type AsNested :: (Type -> Type -> Type) -> Type -> [Type] -> Type -> Constraint
+class Tensor t i (->) => AsNested t i xs unwrapped | t i xs -> unwrapped
   where
-  show = \case
-    ACons xxs -> show xxs
+  asNested :: Tensor t i (->) => Iso (->) (Many t i xs) unwrapped
+
+instance Tensor t i (->) => AsNested t i '[] i
+  where
+  asNested :: Tensor t i (->) => Iso (->) (Many t i '[]) i
+  asNested = Iso to from
+    where
+      to :: Tensor t i (->) => Many t i '[] -> i
+      to = \case
+        ANil i -> i
+      from :: Tensor t i (->) => i -> Many t i '[]
+      from = ANil 
+  
+instance (Tensor t i (->), AsNested t i xs r) => AsNested t i (x ': xs) (x `t` r)
+  where
+  asNested :: Tensor t i (->) => Iso (->) (Many t i (x ': xs)) (x `t` r)
+  asNested = Iso to from
+    where
+      to :: (AsNested t i xs r, Tensor t i (->)) => Many t i (x ': xs) -> (x `t` r)
+      to = \case
+        ACons xxs -> grmap (fwd asNested) xxs
+      from :: (AsNested t i xs r, Tensor t i (->)) => (x `t` r) -> Many t i (x ': xs)
+      from xtr = ACons $ grmap (bwd asNested) xtr
 
 type (++) :: [k] -> [k] -> [k]
 type family xs ++ ys
