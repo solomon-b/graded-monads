@@ -5,7 +5,6 @@ description:
 bug-reports:        https://github.com/solomon-b/aggregate-errors
 author:             solomon
 maintainer:         ssbothwell@gmail.com
-extra-source-files: CHANGELOG.md
 
 common common-settings
   default-language:    Haskell2010
@@ -20,10 +19,10 @@ common common-settings
 
 common common-libraries
   build-depends:
-    , base ^>=4.15.0.0
-    , mtl
-    , these
+    , base >= 4.15 && < 5
     , monoidal-functors
+    , these >= 1.1.1 && < 1.2
+    , mtl >= 2.2.2 && < 2.3
 
 executable aggregated-errors
   -- A clever trick for aggregating different error types in a single do block.
