@@ -1,0 +1,14 @@
+packages: ../graded-monads
+
+source-repository-package
+  type: git
+  location: https://github.com/solomon-b/monoidal-functors.git
+  tag: 27e59348bdba5d2c55e7f384cb10325ad438e64c
+
+-- Ensure that this project file is only used with GHC 9.2.6
+with-compiler: ghc-9.2.6
+
+-- Enable tests and benchmarks, to ensure that 'cabal-install' always builds
+-- with a package set that's compatible with the entirety of this project.
+tests: True
+benchmarks: True
