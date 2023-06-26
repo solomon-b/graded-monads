@@ -20,10 +20,10 @@ common common-settings
 
 common common-libraries
   build-depends:
-    , base ^>=4.15.0.0
-    , mtl
-    , these
-    , monoidal-functors
+    , base >= 4.17.1 && < 4.18
+    , monoidal-functors == 0.1.1.0
+    , these >= 1.1.1 && < 1.2
+    , mtl >= 2.2.2 && < 2.3
 
 executable aggregated-errors
   -- A clever trick for aggregating different error types in a single do block.
