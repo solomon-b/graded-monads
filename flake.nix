@@ -2,64 +2,47 @@
   description = "Graded Monads with a Qualified Do Interface";
 
   inputs = {
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-23.05;
-
-    flake-utils = {
-      url = github:numtide/flake-utils;
+    nixpkgs.url = github:NixOS/nixpkgs/nixos-26.05;
+    flake-utils.url = github:numtide/flake-utils;
+    monoidal-functors = {
+      url = github:solomon-b/monoidal-functors/e31eca0bb9165a7711a9c2632a953f42ea42c067;
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, monoidal-functors }:
     let
-      ghcVersion = "945";
+      ghcVersion = "9103";
       compiler = "ghc${ghcVersion}";
-      # default systems compatible with pre-commit-hooks.nix
-      # https://github.com/cachix/pre-commit-hooks.nix/pull/122
-      defaultSystems = [
-        "aarch64-linux"
-        # "aarch64-darwin"
-        "i686-linux"
-        "x86_64-darwin"
-        "x86_64-linux"
-      ];
+      overlay = import ./overlay.nix;
+      overlays = [ monoidal-functors.overlays.default overlay ];
     in
-    flake-utils.lib.eachSystem defaultSystems (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-
-        # need to do the evalPkgs trick so that IFD works with `nix flake check`
-        # https://github.com/NixOS/nix/issues/4265
-        evalPkgs = import nixpkgs { system = "x86_64-linux"; };
-
-        # Our haskell packages override, needs to use evalPkgs because
-        # cabal2nix uses IFD
-        hsPkgs = evalPkgs.haskell.packages.${compiler}.override {
-          overrides = hfinal: hprev: {
-            graded-monads = hfinal.callCabal2nix "graded-monads" ./. { };
+    flake-utils.lib.eachDefaultSystem
+      (system:
+        let
+          pkgs = import nixpkgs { inherit system overlays; };
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              cabal-install
+              haskell.compiler.${compiler}
+              haskell.packages.${compiler}.haskell-language-server
+              just
+              nixpkgs-fmt
+              ormolu
+            ];
           };
-        };
-      in
-      rec {
 
-        # Note: cannot reference anything that depends on `evalPkgs` like `hsPkgs`
-        # otherwise non-x86_64-linux users will not be able to build the dev env
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            cabal2nix
-            cabal-install
-            ghcid
-            haskell.compiler.${compiler}
-            haskell.packages.${compiler}.haskell-language-server
-            ormolu
-            zlib
-          ];
-        };
-
-        packages = flake-utils.lib.flattenTree {
-          graded-monads = hsPkgs.graded-monads;
-        };
-
-        defaultPackage = packages.graded-monads;
-      });
+          formatter = pkgs.nixpkgs-fmt;
+          packages = flake-utils.lib.flattenTree
+            {
+              graded-monads = pkgs.haskellPackages.graded-monads;
+            } // {
+            default = pkgs.haskellPackages.graded-monads;
+          };
+        }) // {
+      overlays.default = overlay;
+    };
 }
