@@ -7,8 +7,11 @@ import Control.Category.Tensor.Expr (Tensored (..))
 import Control.Monad.Graded (gweaken)
 import Control.Monad.Graded.Except (ExceptT' (..))
 import Control.Monad.Graded.Grade (injSub)
+import Control.Monad.Graded.Laws (weakenReflexiveExcept)
 import Data.Functor.Identity (Identity (..))
 import Data.Void (Void)
+import Hedgehog.Classes (lawsCheck)
+import qualified Hedgehog.Gen as Gen
 import System.Exit (exitFailure, exitSuccess)
 
 data E1 = E1 deriving (Eq, Show)
@@ -24,8 +27,9 @@ weakenCheck =
    in runIdentity (runExceptT' w) == Left (Tensored (Left E1))
 
 main :: IO ()
-main =
-  if injected == Tensored (Left E1) && weakenCheck
+main = do
+  lawsOk <- lawsCheck (weakenReflexiveExcept (Gen.constant E1) (Gen.constant E2))
+  if injected == Tensored (Left E1) && weakenCheck && lawsOk
     then exitSuccess
     else exitFailure
   where

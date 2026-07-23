@@ -71,6 +71,22 @@ library
     Control.Monad.Graded.Writer.Class
     Control.Monad.Graded.Grade
 
+library laws
+  import:
+    , common-settings
+  visibility:
+    public
+  hs-source-dirs:
+    laws
+  exposed-modules:
+    Control.Monad.Graded.Laws
+  build-depends:
+    , base
+    , graded-monads
+    , monoidal-functors
+    , hedgehog
+    , hedgehog-classes
+
 test-suite graded-monads-test
   import:
     , common-settings
@@ -83,4 +99,7 @@ test-suite graded-monads-test
   build-depends:
     , base
     , graded-monads
+    , graded-monads:laws
     , monoidal-functors
+    , hedgehog
+    , hedgehog-classes
