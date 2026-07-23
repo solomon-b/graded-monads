@@ -21,6 +21,10 @@ module Control.Monad.Graded.Grade
   ( Member,
     inj,
     Subset (..),
+    Union,
+    Nub,
+    Remove,
+    Delete,
     here,
     there,
     uncons,
@@ -29,9 +33,28 @@ where
 
 --------------------------------------------------------------------------------
 
-import Control.Category.Tensor.Expr (Tensored (..))
+import Control.Category.Tensor.Expr (Tensored (..), type (++))
 import Data.Kind (Type)
 import Data.Void (Void, absurd)
+
+--------------------------------------------------------------------------------
+-- Set algebra on grades (closed type families).
+
+type family Remove (x :: Type) (xs :: [Type]) :: [Type] where
+  Remove _ '[] = '[]
+  Remove x (x ': xs) = Remove x xs
+  Remove x (y ': xs) = y ': Remove x xs
+
+type family Nub (xs :: [Type]) :: [Type] where
+  Nub '[] = '[]
+  Nub (x ': xs) = x ': Nub (Remove x xs)
+
+-- | Set union of two grades: concatenate then dedup (first-occurrence order).
+type family Union (xs :: [Type]) (ys :: [Type]) :: [Type] where
+  Union xs ys = Nub (xs ++ ys)
+
+-- | Remove a type from a grade (used by narrowing catch).
+type Delete x xs = Remove x xs
 
 --------------------------------------------------------------------------------
 
