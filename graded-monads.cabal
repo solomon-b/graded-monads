@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               graded-monads
 version:            0.1.0.0
 description:
@@ -69,3 +69,18 @@ library
     Control.Monad.Graded.Except.Class
     Control.Monad.Graded.Writer
     Control.Monad.Graded.Writer.Class
+    Control.Monad.Graded.Grade
+
+test-suite graded-monads-test
+  import:
+    , common-settings
+  type:
+    exitcode-stdio-1.0
+  main-is:
+    Main.hs
+  hs-source-dirs:
+    test
+  build-depends:
+    , base
+    , graded-monads
+    , monoidal-functors
