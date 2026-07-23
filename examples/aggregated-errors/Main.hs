@@ -6,13 +6,13 @@ module Main where
 
 --------------------------------------------------------------------------------
 
-import Control.Category.Tensor.Expr (getTensored)
 import qualified Control.Monad.Graded as G
 import Control.Monad.Graded.Except
 import Control.Monad.Graded.Except.Class
-import Data.Void (absurd)
 
 --------------------------------------------------------------------------------
+
+data HttpError = HttpError deriving (Show)
 
 data ParseError = ParseError deriving (Show)
 
@@ -24,37 +24,26 @@ data Response = Response deriving (Show)
 
 --------------------------------------------------------------------------------
 
+-- A subroutine with a real failure path AND a success path, both at '[ParseError].
+-- The success branch type-checks because 'return' weakens '[] into '[ParseError].
 mkRequest :: (GradedMonadError m) => String -> m '[ParseError] Request
-mkRequest _ = gthrowError ParseError
+mkRequest host
+  | null host = gthrowError ParseError
+  | otherwise = G.return Request
 
--- Previously rejected: a fallible-typed function whose body succeeds.  'G.return'
--- weakens the empty grade into the declared '[TransformError].
 transformRequest :: (GradedMonadError m) => Request -> m '[TransformError] Request
 transformRequest _ = G.return Request
 
-invokeRequest :: (GradedMonadError m) => Request -> m '[] Response
-invokeRequest _ = G.return Response
+invokeRequest :: (GradedMonadError m) => Request -> m '[HttpError] Response
+invokeRequest _ = gthrowError HttpError
 
-program :: (GradedMonadError m) => m '[ParseError, TransformError] Response
+program :: (GradedMonadError m) => m '[ParseError, TransformError, HttpError] Response
 program = G.do
   req <- mkRequest "hoogle.hackage.com"
   req' <- transformRequest req
   invokeRequest req'
 
--- Partial handling: recover ParseError, propagate TransformError.  The branches
--- unify at  m '[TransformError] Response  via weakening.
-recoverParse ::
-  (GradedMonadError m) =>
-  m '[ParseError, TransformError] Response ->
-  m '[TransformError] Response
-recoverParse p = gcatchError p $ \err -> case getTensored err of
-  Left ParseError -> G.return Response
-  Right (Left TransformError) -> gthrowError TransformError
-  Right (Right v) -> absurd v
-
 main :: IO ()
 main = do
-  r1 <- runExceptT' program
-  putStrLn ("program           = " ++ show r1)
-  r2 <- runExceptT' (recoverParse program)
-  putStrLn ("recoverParse prog = " ++ show r2)
+  r <- runExceptT' program
+  putStrLn ("program = " ++ show r)
