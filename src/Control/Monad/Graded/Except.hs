@@ -16,6 +16,7 @@ import Control.Category.Tensor.Expr
 import Control.Monad.Except
 import Control.Monad.Graded hiding (return, (>>=))
 import Control.Monad.Graded.Except.Class
+import Control.Monad.Graded.Grade (Subset (..))
 import Data.Bifunctor
 import Data.Functor.Compose
 import Data.Functor.Identity
@@ -27,6 +28,9 @@ newtype ExceptT' m es a = ExceptT' {runExceptT' :: m (Either (Tensored Either Vo
   deriving (Functor, Applicative, Monad) via (ExceptT (Tensored Either Void es) m)
 
 deriving via (ExceptT (Tensored Either Void es) m) instance (Monad m) => MonadError (Tensored Either Void es) (ExceptT' m es)
+
+instance (Functor m, Subset xs ys) => Weaken (ExceptT' m) xs ys where
+  gweaken (ExceptT' k) = ExceptT' (fmap (first injSub) k)
 
 instance (Monad m) => GradedMonad (ExceptT' m) Void Either where
   greturn :: Identity ~> ExceptT' m '[]

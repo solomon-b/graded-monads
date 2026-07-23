@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Control.Monad.Graded.Writer where
@@ -22,6 +23,9 @@ import Data.Functor.Identity
 
 newtype WriterT' m w a = WriterT' {runWriterT' :: m (a, Tensored (,) () w)}
   deriving (Functor) via (WriterT (Tensored (,) () w) m)
+
+instance (xs ~ ys) => Weaken (WriterT' m) xs ys where
+  gweaken = id
 
 instance (Monad m) => GradedMonad (WriterT' m) () (,) where
   greturn :: Identity ~> WriterT' m '[]

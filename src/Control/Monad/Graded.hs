@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
@@ -27,6 +28,12 @@ type (~>) f g = forall x. f x -> g x
 
 type FunctorF :: (k -> Type -> Type) -> Constraint
 type FunctorF m = (forall x. Functor (m x))
+
+-- | Weakening along the grade preorder.  Each graded monad declares its own
+-- order and coercion: errors weaken along @⊆@, writer along equality.
+type Weaken :: ([Type] -> Type -> Type) -> [Type] -> [Type] -> Constraint
+class Weaken m xs ys where
+  gweaken :: m xs a -> m ys a
 
 type GradedMonad ::
   ([Type] -> Type -> Type) ->
