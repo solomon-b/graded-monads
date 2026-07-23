@@ -19,7 +19,9 @@
 -- overlapping instances.
 module Control.Monad.Graded.Grade
   ( Member,
+    Handle,
     inj,
+    decompose,
     Subset (..),
     Union,
     Nub,
@@ -53,8 +55,14 @@ type family Nub (xs :: [Type]) :: [Type] where
 type family Union (xs :: [Type]) (ys :: [Type]) :: [Type] where
   Union xs ys = Nub (xs ++ ys)
 
--- | Remove a type from a grade (used by narrowing catch).
-type Delete x xs = Remove x xs
+-- | Remove the element at a given position (purely structural — no apartness).
+type family DeleteAt (n :: Nat) (xs :: [Type]) :: [Type] where
+  DeleteAt 'Z (x ': xs) = xs
+  DeleteAt ('S n) (y ': xs) = y ': DeleteAt n xs
+
+-- | Remove the first occurrence of a type from a grade.  On a deduped (set)
+-- grade this removes its single occurrence.
+type Delete e es = DeleteAt (FindElem e es) es
 
 --------------------------------------------------------------------------------
 
@@ -110,3 +118,33 @@ instance (Member x ys, Subset xs ys) => Subset (x ': xs) ys where
   injSub t = case uncons t of
     Left x -> inj x
     Right r -> injSub r
+
+--------------------------------------------------------------------------------
+-- Decompose: split an error sum at a given member (used by narrowing catch).
+
+class DecomposeAt (n :: Nat) (e :: Type) (es :: [Type]) where
+  decomposeAt :: Tensored Either Void es -> Either e (Tensored Either Void (DeleteAt n es))
+
+instance DecomposeAt 'Z e (e ': es) where
+  decomposeAt t = case uncons t of
+    Left e -> Left e
+    Right r -> Right r
+
+instance (DecomposeAt n e es) => DecomposeAt ('S n) e (y ': es) where
+  decomposeAt t = case uncons t of
+    Left y -> Right (here y)
+    Right r -> case decomposeAt @n @e r of
+      Left e -> Left e
+      Right r' -> Right (there r')
+
+-- | The constraint enabling narrowing catch on error @e@ within grade @es@.
+type Handle e es = DecomposeAt (FindElem e es) e es
+
+-- | Project a member @e@ out of an error sum, or return the remaining sum with
+-- @e@ removed.
+decompose ::
+  forall e es.
+  (Handle e es) =>
+  Tensored Either Void es ->
+  Either e (Tensored Either Void (Delete e es))
+decompose = decomposeAt @(FindElem e es) @e @es

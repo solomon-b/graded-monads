@@ -1,10 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Control.Monad.Graded.Except where
@@ -15,7 +18,7 @@ import Control.Category.Tensor.Expr
 import Control.Monad.Except
 import Control.Monad.Graded hiding (return, (>>=))
 import Control.Monad.Graded.Except.Class
-import Control.Monad.Graded.Grade (Subset (..))
+import Control.Monad.Graded.Grade (Delete, Handle, Subset (..), Union, decompose)
 import Data.Bifunctor
 import Data.Functor.Identity
 import Data.Void
@@ -54,3 +57,24 @@ instance (Monad m) => GradedMonadError (ExceptT' m) where
       m >>= \case
         Left e -> runExceptT' $ f e
         Right a -> pure $ Right a
+
+-- | Handle exactly the error @e@: remove it from the grade and union in the
+-- handler's own errors.  Any other error passes through unchanged.  Composes:
+-- @gcatch \@A . gcatch \@B@.
+gcatch ::
+  forall e es es' m a.
+  ( Monad m,
+    Handle e es,
+    Subset (Delete e es) (Union (Delete e es) es'),
+    Subset es' (Union (Delete e es) es')
+  ) =>
+  ExceptT' m es a ->
+  (e -> ExceptT' m es' a) ->
+  ExceptT' m (Union (Delete e es) es') a
+gcatch (ExceptT' k) h =
+  ExceptT' $
+    k >>= \case
+      Right a -> pure (Right a)
+      Left err -> case decompose @e err of
+        Left e -> runExceptT' (gweaken (h e))
+        Right rest -> pure (Left (injSub rest))

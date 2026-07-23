@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Main where
@@ -6,7 +7,7 @@ module Main where
 import Control.Category.Tensor.Expr (Tensored (..))
 import Control.Monad.Graded (gweaken)
 import qualified Control.Monad.Graded as G
-import Control.Monad.Graded.Except (ExceptT' (..))
+import Control.Monad.Graded.Except (ExceptT' (..), gcatch)
 import Control.Monad.Graded.Except.Class (gthrowError)
 import Control.Monad.Graded.Grade (Union, injSub)
 import Control.Monad.Graded.Laws (weakenReflexiveExcept)
@@ -43,10 +44,17 @@ dedupBindCheck =
   let prog = ((gthrowError E1 :: ExceptT' Identity '[E1] Int) G.>> gthrowError E1) :: ExceptT' Identity '[E1] Int
    in runIdentity (runExceptT' prog) == Left (Tensored (Left E1))
 
+-- Narrowing catch: handling E1 removes exactly it from the grade, leaving '[E2].
+narrowCheck :: Bool
+narrowCheck =
+  let comp = ExceptT' (Identity (Left (Tensored (Left E1)))) :: ExceptT' Identity '[E1, E2] Int
+      handled = gcatch @E1 comp (\_ -> G.return 0 :: ExceptT' Identity '[] Int) :: ExceptT' Identity '[E2] Int
+   in runIdentity (runExceptT' handled) == Right 0
+
 main :: IO ()
 main = do
   lawsOk <- lawsCheck (weakenReflexiveExcept (Gen.constant E1) (Gen.constant E2))
-  if injected == Tensored (Left E1) && weakenCheck && unionDedupCheck && dedupBindCheck && lawsOk
+  if injected == Tensored (Left E1) && weakenCheck && unionDedupCheck && dedupBindCheck && narrowCheck && lawsOk
     then exitSuccess
     else exitFailure
   where
