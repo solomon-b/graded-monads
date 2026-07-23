@@ -18,7 +18,7 @@ data ParseError = ParseError deriving (Show)
 
 data TransformError = TransformError deriving (Show)
 
-data Request = Request
+data Request = Request deriving (Show)
 
 data Response = Response deriving (Show)
 
@@ -43,7 +43,16 @@ program = G.do
   req' <- transformRequest req
   invokeRequest req'
 
+-- Both attempts may raise ParseError; the set grade dedups to a single
+-- '[ParseError] (the old list grade would give '[ParseError, ParseError]).
+retry :: (GradedMonadError m) => m '[ParseError] Request
+retry = G.do
+  _ <- mkRequest ""
+  mkRequest "fallback"
+
 main :: IO ()
 main = do
   r <- runExceptT' program
   putStrLn ("program = " ++ show r)
+  r2 <- runExceptT' retry
+  putStrLn ("retry   = " ++ show r2)
