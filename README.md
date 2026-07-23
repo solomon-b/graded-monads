@@ -67,6 +67,10 @@ main = do
    Right Response -> print Response
 ```
 
+A subroutine may declare an error it *might* raise but still succeed: `return`
+weakens the empty grade into any declared error set. Handlers can recover one
+error and propagate the rest, unifying branches via `gweaken`.
+
 The graded form of `WriterT` allows you to specifiy unique log types per subroutine in a similar manner:
 ```haskell
 mkRequest :: (GradedMonadWriter m) => String -> m '[ParseLog] Request
