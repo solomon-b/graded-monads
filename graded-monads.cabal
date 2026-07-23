@@ -1,10 +1,19 @@
 cabal-version:      2.4
 name:               graded-monads
 version:            0.1.0.0
-description:        
+description:
 bug-reports:        https://github.com/solomon-b/aggregate-errors
 author:             solomon
 maintainer:         ssbothwell@gmail.com
+extra-source-files: CHANGELOG.md
+tested-with:
+    GHC == 9.0.2,
+    GHC == 9.2.8,
+    GHC == 9.4.8,
+    GHC == 9.6.7,
+    GHC == 9.8.4,
+    GHC == 9.10.3,
+    GHC == 9.12.4
 
 common common-settings
   default-language:    Haskell2010
@@ -21,8 +30,8 @@ common common-libraries
   build-depends:
     , base >= 4.15 && < 5
     , monoidal-functors
-    , these >= 1.1.1 && < 1.2
-    , mtl >= 2.2.2 && < 2.3
+    , these >= 1.1.1 && < 1.3
+    , mtl >= 2.2.2 && < 2.4
 
 executable aggregated-errors
   -- A clever trick for aggregating different error types in a single do block.
