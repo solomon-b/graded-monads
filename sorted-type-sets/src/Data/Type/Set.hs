@@ -26,6 +26,7 @@ module Data.Type.Set
     -- * Set algebra
     Insert,
     Sort,
+    Set,
     Union,
     Member,
     Subset (..),
@@ -90,6 +91,10 @@ type family Sort xs where
 type Union :: [Type] -> [Type] -> [Type]
 type family Union xs ys where
   Union xs ys = Sort (xs ++ ys)
+
+-- | A grade written in any order, normalized to its canonical set.  Handy in
+-- signatures: @m (Set '[HttpError, ParseError]) a@ accepts either order.
+type Set es = Sort es
 
 --------------------------------------------------------------------------------
 -- Value-level open union over  Tensored Either Void.

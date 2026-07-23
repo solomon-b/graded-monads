@@ -10,6 +10,7 @@ module Main where
 import qualified Control.Monad.Graded as G
 import Control.Monad.Graded.Except
 import Control.Monad.Graded.Except.Class
+import Data.Type.Set (Set)
 import GHC.Generics (Generic)
 
 --------------------------------------------------------------------------------
@@ -39,9 +40,9 @@ transformRequest _ = G.return Request
 invokeRequest :: (GradedMonadError m) => Request -> m '[HttpError] Response
 invokeRequest _ = gthrowError HttpError
 
--- The grade is a set, kept in canonical (type-name) order, so it no longer
--- depends on the order these subroutines run in.
-program :: (GradedMonadError m) => m '[HttpError, ParseError, TransformError] Response
+-- 'Set' normalizes the grade, so you can list the errors in ANY order here and
+-- it still matches the (canonical, bind-order-independent) set.
+program :: (GradedMonadError m) => m (Set '[HttpError, TransformError, ParseError]) Response
 program = G.do
   req <- mkRequest "hoogle.hackage.com"
   req' <- transformRequest req
