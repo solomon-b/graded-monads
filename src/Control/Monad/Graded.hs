@@ -18,7 +18,7 @@ module Control.Monad.Graded where
 --------------------------------------------------------------------------------
 
 import Control.Category.Tensor.Expr
-import Data.Functor.Compose
+import Control.Monad.Graded.Grade (Subset, Union)
 import Data.Functor.Identity
 import Data.Kind
 
@@ -35,39 +35,52 @@ type Weaken :: ([Type] -> Type -> Type) -> [Type] -> [Type] -> Constraint
 class Weaken m xs ys where
   gweaken :: m xs a -> m ys a
 
+--------------------------------------------------------------------------------
+
+-- | The monoid a graded monad uses to combine grades: the free monoid (@++@,
+-- ordered, keeps duplicates) or the join-semilattice (@Union@, a set).
+data GradeAlgebra = Free | Join
+
+-- | How two grades combine under @alg@.
+type Combine :: GradeAlgebra -> [Type] -> [Type] -> [Type]
+type family Combine alg xs ys where
+  Combine 'Free xs ys = xs ++ ys
+  Combine 'Join xs ys = Union xs ys
+
+-- | The constraint 'gbind' needs in order to combine grades under @alg@.
+type CombineC :: GradeAlgebra -> [Type] -> [Type] -> Constraint
+type family CombineC alg xs ys where
+  CombineC 'Free xs ys = AppendTensored xs
+  CombineC 'Join xs ys = (Subset xs (Union xs ys), Subset ys (Union xs ys))
+
 type GradedMonad ::
   ([Type] -> Type -> Type) ->
   Type ->
   (Type -> Type -> Type) ->
+  GradeAlgebra ->
   Constraint
-class (FunctorF m) => GradedMonad m i t | m -> i t where
-  {-# MINIMAL greturn, (gjoin | gbind) #-}
+class (FunctorF m) => GradedMonad m i t alg | m -> i t alg where
   greturn :: Identity ~> m '[]
+  gbind :: (CombineC alg xs ys) => m xs a -> (a -> m ys b) -> m (Combine alg xs ys) b
 
-  gjoin :: (AppendTensored xs) => (m xs `Compose` m ys) ~> m (xs ++ ys)
-  gjoin (Compose m) = m `gbind` id
-
-  gbind :: (AppendTensored xs) => m xs a -> (a -> m ys b) -> m (xs ++ ys) b
-  gbind mxa f = gjoin $ Compose $ fmap f mxa
+--------------------------------------------------------------------------------
 
 return ::
-  (GradedMonad m i t, Weaken m '[] es) =>
+  (GradedMonad m i t alg, Weaken m '[] es) =>
   x ->
   m es x
 return = gweaken . greturn . Identity
 
 (>>=) ::
-  (GradedMonad m i t) =>
-  (AppendTensored xs) =>
+  (GradedMonad m i t alg, CombineC alg xs ys) =>
   m xs a ->
   (a -> m ys b) ->
-  m (xs ++ ys) b
+  m (Combine alg xs ys) b
 (>>=) = gbind
 
 (>>) ::
-  (GradedMonad m i t) =>
-  (AppendTensored xs) =>
+  (GradedMonad m i t alg, CombineC alg xs ys) =>
   m xs a ->
   m ys b ->
-  m (xs ++ ys) b
+  m (Combine alg xs ys) b
 (>>) ma mb = gbind ma (const mb)

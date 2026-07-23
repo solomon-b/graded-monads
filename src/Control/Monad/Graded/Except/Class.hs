@@ -17,7 +17,7 @@ import Data.Void
 
 type GradedMonadError :: ([Type] -> Type -> Type) -> Constraint
 class
-  ( GradedMonad m Void Either,
+  ( GradedMonad m Void Either 'Join,
     forall es. Weaken m '[] es
   ) =>
   GradedMonadError m

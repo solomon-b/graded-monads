@@ -12,12 +12,5 @@ import Data.Kind
 --------------------------------------------------------------------------------
 
 type GradedMonadWriter :: ([Type] -> Type -> Type) -> Constraint
-class (GradedMonad m () (,), Weaken m '[] '[]) => GradedMonadWriter m where
+class (GradedMonad m () (,) 'Free, Weaken m '[] '[]) => GradedMonadWriter m where
   gtell :: w -> m '[w] ()
-
--- type GradedMonadWriter2 :: [Type] -> (Type -> Type) -> Constraint
--- class GradedMonadWriter2 ws m
---  where
---  gtell' :: w `In` ws => w -> m ws ()
---
--- class In

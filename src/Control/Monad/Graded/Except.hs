@@ -11,14 +11,12 @@ module Control.Monad.Graded.Except where
 
 --------------------------------------------------------------------------------
 
-import Control.Category.Tensor
 import Control.Category.Tensor.Expr
 import Control.Monad.Except
 import Control.Monad.Graded hiding (return, (>>=))
 import Control.Monad.Graded.Except.Class
 import Control.Monad.Graded.Grade (Subset (..))
 import Data.Bifunctor
-import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Void
 
@@ -32,17 +30,19 @@ deriving via (ExceptT (Tensored Either Void es) m) instance (Monad m) => MonadEr
 instance (Functor m, Subset xs ys) => Weaken (ExceptT' m) xs ys where
   gweaken (ExceptT' k) = ExceptT' (fmap (first injSub) k)
 
-instance (Monad m) => GradedMonad (ExceptT' m) Void Either where
-  greturn :: Identity ~> ExceptT' m '[]
+-- | Grade = the SET of errors that may escape; combine = 'Union' (dedup); the
+-- 'gbind' injects whichever side actually raised into the union.
+instance (Monad m) => GradedMonad (ExceptT' m) Void Either 'Join where
   greturn = ExceptT' . pure . Right . runIdentity
 
-  gjoin ::
-    (AppendTensored xs) =>
-    (ExceptT' m xs `Compose` ExceptT' m ys)
-      ~> ExceptT' m (xs ++ ys)
-  gjoin (Compose (ExceptT' mma)) =
+  gbind (ExceptT' k) f =
     ExceptT' $
-      fmap (first appendTensored . fwd assoc) (traverse runExceptT' =<< mma)
+      k >>= \case
+        Left e -> pure (Left (injSub e))
+        Right a ->
+          runExceptT' (f a) >>= \case
+            Left e' -> pure (Left (injSub e'))
+            Right b -> pure (Right b)
 
 instance (Monad m) => GradedMonadError (ExceptT' m) where
   gthrowError :: e -> ExceptT' m '[e] a

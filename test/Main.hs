@@ -5,7 +5,9 @@ module Main where
 
 import Control.Category.Tensor.Expr (Tensored (..))
 import Control.Monad.Graded (gweaken)
+import qualified Control.Monad.Graded as G
 import Control.Monad.Graded.Except (ExceptT' (..))
+import Control.Monad.Graded.Except.Class (gthrowError)
 import Control.Monad.Graded.Grade (Union, injSub)
 import Control.Monad.Graded.Laws (weakenReflexiveExcept)
 import Data.Functor.Identity (Identity (..))
@@ -34,10 +36,17 @@ unionDedupCheck =
       y = Tensored (Left E1) :: Tensored Either Void '[E1]
    in x == y
 
+-- The payoff: two binds that each may raise E1 combine to the single-arm grade
+-- '[E1] (not '[E1, E1]) because the Except grade uses Union.
+dedupBindCheck :: Bool
+dedupBindCheck =
+  let prog = ((gthrowError E1 :: ExceptT' Identity '[E1] Int) G.>> gthrowError E1) :: ExceptT' Identity '[E1] Int
+   in runIdentity (runExceptT' prog) == Left (Tensored (Left E1))
+
 main :: IO ()
 main = do
   lawsOk <- lawsCheck (weakenReflexiveExcept (Gen.constant E1) (Gen.constant E2))
-  if injected == Tensored (Left E1) && weakenCheck && unionDedupCheck && lawsOk
+  if injected == Tensored (Left E1) && weakenCheck && unionDedupCheck && dedupBindCheck && lawsOk
     then exitSuccess
     else exitFailure
   where
