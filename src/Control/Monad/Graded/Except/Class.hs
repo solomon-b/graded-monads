@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Control.Monad.Graded.Except.Class where
 
@@ -14,6 +16,11 @@ import Data.Void
 --------------------------------------------------------------------------------
 
 type GradedMonadError :: ([Type] -> Type -> Type) -> Constraint
-class (GradedMonad m Void Either) => GradedMonadError m where
+class
+  ( GradedMonad m Void Either,
+    forall es. Weaken m '[] es
+  ) =>
+  GradedMonadError m
+  where
   gthrowError :: e -> m '[e] a
   gcatchError :: m es a -> (Tensored Either Void es -> m es' a) -> m es' a

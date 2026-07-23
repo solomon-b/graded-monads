@@ -51,10 +51,10 @@ class (FunctorF m) => GradedMonad m i t | m -> i t where
   gbind mxa f = gjoin $ Compose $ fmap f mxa
 
 return ::
-  (GradedMonad m i t) =>
+  (GradedMonad m i t, Weaken m '[] es) =>
   x ->
-  m '[] x
-return = greturn . Identity
+  m es x
+return = gweaken . greturn . Identity
 
 (>>=) ::
   (GradedMonad m i t) =>
