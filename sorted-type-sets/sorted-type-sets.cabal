@@ -34,3 +34,13 @@ library
   build-depends:
     , base >= 4.15 && < 5
     , monoidal-functors
+
+test-suite sorted-type-sets-test
+  import: common-settings
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs: test
+  build-depends:
+    , base
+    , monoidal-functors
+    , sorted-type-sets
