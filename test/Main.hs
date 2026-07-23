@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -9,17 +10,18 @@ import Control.Monad.Graded (gweaken)
 import qualified Control.Monad.Graded as G
 import Control.Monad.Graded.Except (ExceptT' (..), gcatch)
 import Control.Monad.Graded.Except.Class (gthrowError)
-import Control.Monad.Graded.Grade (Union, injSub)
+import Data.Type.Set (Union, injSub)
 import Control.Monad.Graded.Laws (weakenReflexiveExcept)
 import Data.Functor.Identity (Identity (..))
 import Data.Void (Void)
+import GHC.Generics (Generic)
 import Hedgehog.Classes (lawsCheck)
 import qualified Hedgehog.Gen as Gen
 import System.Exit (exitFailure, exitSuccess)
 
-data E1 = E1 deriving (Eq, Show)
+data E1 = E1 deriving (Eq, Show, Generic)
 
-data E2 = E2 deriving (Eq, Show)
+data E2 = E2 deriving (Eq, Show, Generic)
 
 -- weakening a computation that raised E1 into the larger set '[E1, E2]
 -- keeps the error value intact.

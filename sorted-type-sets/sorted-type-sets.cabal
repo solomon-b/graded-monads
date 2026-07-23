@@ -1,0 +1,36 @@
+cabal-version:      3.0
+name:               sorted-type-sets
+version:            0.1.0.0
+synopsis:           Sorted, canonical type-level sets ordered by a Generic-derived name
+description:
+  Type-level sets of types kept in a canonical (sorted) order, so membership and
+  union are independent of insertion order.  The order is derived automatically
+  from each type's @Generic@ datatype name, and values are witnessed as an open
+  union over @monoidal-functors@' @Tensored Either Void@.
+author:             solomon
+maintainer:         ssbothwell@gmail.com
+build-type:         Simple
+tested-with:
+    GHC == 9.0.2,
+    GHC == 9.2.8,
+    GHC == 9.4.8,
+    GHC == 9.6.7,
+    GHC == 9.8.4,
+    GHC == 9.10.3,
+    GHC == 9.12.4
+
+common common-settings
+  default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+
+library
+  import: common-settings
+  hs-source-dirs: src
+  exposed-modules:
+    Data.Type.Set
+  build-depends:
+    , base >= 4.15 && < 5
+    , monoidal-functors

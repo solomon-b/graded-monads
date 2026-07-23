@@ -18,7 +18,7 @@ module Control.Monad.Graded where
 --------------------------------------------------------------------------------
 
 import Control.Category.Tensor.Expr
-import Control.Monad.Graded.Grade (Subset, Union)
+import Data.Type.Set (Subset, Union)
 import Data.Functor.Identity
 import Data.Kind
 

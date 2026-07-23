@@ -18,7 +18,7 @@ import Control.Category.Tensor.Expr
 import Control.Monad.Except
 import Control.Monad.Graded hiding (return, (>>=))
 import Control.Monad.Graded.Except.Class
-import Control.Monad.Graded.Grade (Delete, Handle, Subset (..), Union, decompose)
+import Data.Type.Set (Delete, Handle, Subset (..), Union, decompose)
 import Data.Bifunctor
 import Data.Functor.Identity
 import Data.Void

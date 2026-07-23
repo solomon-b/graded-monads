@@ -20,7 +20,7 @@ where
 import Control.Category.Tensor.Expr (Tensored (..))
 import Control.Monad.Graded (gweaken)
 import Control.Monad.Graded.Except (ExceptT' (..))
-import Control.Monad.Graded.Grade (Subset)
+import Data.Type.Set (Subset)
 import Data.Functor.Identity (Identity (..))
 import Data.Void (Void)
 import Hedgehog

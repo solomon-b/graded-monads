@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QualifiedDo #-}
 
@@ -9,18 +10,19 @@ module Main where
 import qualified Control.Monad.Graded as G
 import Control.Monad.Graded.Except
 import Control.Monad.Graded.Except.Class
+import GHC.Generics (Generic)
 
 --------------------------------------------------------------------------------
 
-data HttpError = HttpError deriving (Show)
+data HttpError = HttpError deriving (Show, Generic)
 
-data ParseError = ParseError deriving (Show)
+data ParseError = ParseError deriving (Show, Generic)
 
-data TransformError = TransformError deriving (Show)
+data TransformError = TransformError deriving (Show, Generic)
 
-data Request = Request deriving (Show)
+data Request = Request deriving (Show, Generic)
 
-data Response = Response deriving (Show)
+data Response = Response deriving (Show, Generic)
 
 --------------------------------------------------------------------------------
 
@@ -37,7 +39,9 @@ transformRequest _ = G.return Request
 invokeRequest :: (GradedMonadError m) => Request -> m '[HttpError] Response
 invokeRequest _ = gthrowError HttpError
 
-program :: (GradedMonadError m) => m '[ParseError, TransformError, HttpError] Response
+-- The grade is a set, kept in canonical (type-name) order, so it no longer
+-- depends on the order these subroutines run in.
+program :: (GradedMonadError m) => m '[HttpError, ParseError, TransformError] Response
 program = G.do
   req <- mkRequest "hoogle.hackage.com"
   req' <- transformRequest req

@@ -30,6 +30,7 @@ common common-libraries
   build-depends:
     , base >= 4.15 && < 5
     , monoidal-functors
+    , sorted-type-sets
     , these >= 1.1.1 && < 1.3
     , mtl >= 2.2.2 && < 2.4
 
@@ -69,7 +70,6 @@ library
     Control.Monad.Graded.Except.Class
     Control.Monad.Graded.Writer
     Control.Monad.Graded.Writer.Class
-    Control.Monad.Graded.Grade
 
 library laws
   import:
@@ -84,6 +84,7 @@ library laws
     , base
     , graded-monads
     , monoidal-functors
+    , sorted-type-sets
     , hedgehog
     , hedgehog-classes
 
@@ -101,5 +102,6 @@ test-suite graded-monads-test
     , graded-monads
     , graded-monads:laws
     , monoidal-functors
+    , sorted-type-sets
     , hedgehog
     , hedgehog-classes
