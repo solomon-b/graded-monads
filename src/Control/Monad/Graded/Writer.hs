@@ -3,8 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Control.Monad.Graded.Writer where
@@ -15,7 +14,6 @@ import Control.Category.Tensor.Expr
 import Control.Monad.Graded hiding (return, (>>=))
 import Control.Monad.Graded.Writer.Class
 import Control.Monad.Writer
-import Data.Functor.Compose
 import Data.Functor.Identity
 
 --------------------------------------------------------------------------------
@@ -23,18 +21,17 @@ import Data.Functor.Identity
 newtype WriterT' m w a = WriterT' {runWriterT' :: m (a, Tensored (,) () w)}
   deriving (Functor) via (WriterT (Tensored (,) () w) m)
 
-instance (Monad m) => GradedMonad (WriterT' m) () (,) where
-  greturn :: Identity ~> WriterT' m '[]
+instance (xs ~ ys) => Weaken (WriterT' m) xs ys where
+  gweaken = id
+
+-- | Grade = the LIST of logs; combine = @++@ (ordered, keeps duplicates).
+instance (Monad m) => GradedMonad (WriterT' m) () (,) 'Free where
   greturn (Identity x) = WriterT' $ pure (x, Tensored ())
 
-  gjoin ::
-    (AppendTensored xs) =>
-    Compose (WriterT' m xs) (WriterT' m ys)
-      ~> WriterT' m (xs ++ ys)
-  gjoin (Compose (WriterT' mma)) = WriterT' $ do
-    (WriterT' ma, logs) <- mma
-    (a, logs') <- ma
-    pure (a, appendTensored (logs, logs'))
+  gbind (WriterT' mma) f = WriterT' $ do
+    (a, logs) <- mma
+    (b, logs') <- runWriterT' (f a)
+    pure (b, appendTensored (logs, logs'))
 
 instance (Monad m) => GradedMonadWriter (WriterT' m) where
   gtell :: w -> WriterT' m '[w] ()

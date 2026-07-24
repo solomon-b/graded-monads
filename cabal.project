@@ -1,4 +1,6 @@
-packages: .
+packages:
+  .
+  sorted-type-sets
 
 source-repository-package
   type: git

@@ -39,6 +39,7 @@
           packages = flake-utils.lib.flattenTree
             {
               graded-monads = pkgs.haskellPackages.graded-monads;
+              sorted-type-sets = pkgs.haskellPackages.sorted-type-sets;
             } // {
             default = pkgs.haskellPackages.graded-monads;
           };
